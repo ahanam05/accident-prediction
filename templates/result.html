@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="result-box">
-        <h1>Prediction Result</h1>
+        <h1>Prediction</h1>
         <p id="output"></p>
         <button onclick="goBack()">Try Again</button>
     </div>
@@ -16,15 +16,24 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-        let result = JSON.parse(localStorage.getItem("prediction"));
-        document.getElementById("output").innerText = result.prediction 
-            ? result.prediction 
-            : "Error: " + result.error;
-    });
+            let result = JSON.parse(localStorage.getItem("prediction"));
+            document.getElementById("output").innerText = result.prediction 
+                ? result.prediction 
+                : "Error: " + result.error;
 
-    function goBack() {
-        window.location.href = "/";
-    }
+            const cursor = document.createElement("div");
+            cursor.classList.add("cursor");
+            document.body.appendChild(cursor);
+
+            document.addEventListener("mousemove", function (e) {
+                cursor.style.left = `${e.clientX}px`;
+                cursor.style.top = `${e.clientY}px`;
+            });
+        });
+
+        function goBack() {
+            window.location.href = "/";
+        }
     </script>
 </body>
 </html>
