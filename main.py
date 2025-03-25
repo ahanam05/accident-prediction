@@ -1,10 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse, JSONResponse
 import numpy as np
-import pandas as pd
 import joblib
 
 app = FastAPI()
@@ -12,45 +10,40 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 model = joblib.load("model.pkl")
-feature_names = joblib.load("feature_names.pkl")
-
-class InputData(BaseModel):
-    age: int
-    gender: str
-    speed_of_impact: float
-    helmet_used: str
-    seatbelt_used: str
+scaler = joblib.load("scaler.pkl")
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/predict")
-async def predict(request: Request):
+async def predict(
+    request: Request,
+    age: int = Form(...),  
+    speed: float = Form(...),  
+    helmet: str = Form(...),
+    seatbelt: str = Form(...),
+    gender: str = Form(...)
+):
     try:
-        data = await request.json()
-        
-        input_df = pd.DataFrame({
-            'age': [data["age"]],
-            'gender': [data["gender"]],
-            'speed_of_impact': [data["speed_of_impact"]],
-            'helmet_used': [data["helmet_used"]],
-            'seatbelt_used': [data["seatbelt_used"]]
-        })
-        
-        input_encoded = pd.get_dummies(input_df)
-        
-        for col in feature_names:
-            if col not in input_encoded.columns:
-                input_encoded[col] = 0
-                
-        input_encoded = input_encoded[feature_names]
-        
-        prediction = model.predict(input_encoded)[0]
-        return {"prediction": "Survived" if prediction == 1 else "Not Survived"}
-    
+        gender_value = 1 if gender.lower().strip() == "male" else 0
+        helmet_value = 1 if helmet.lower().strip() == "yes" else 0
+        seatbelt_value = 1 if seatbelt.lower().strip() == "yes" else 0
+
+        input_data = np.array([[age, speed, helmet_value, seatbelt_value, gender_value]])
+
+        input_scaled = scaler.transform(input_data)
+
+        prediction = model.predict(input_scaled)[0]
+        result = {"prediction": "Survived" if prediction == 1 else "Not Survived"}
+
+        return JSONResponse(content=result)
+
+    except ValueError as ve:
+        return JSONResponse(content={"error": f"Invalid input: {str(ve)}"}, status_code=400)
+
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.get("/result", response_class=HTMLResponse)
 def result_page(request: Request):

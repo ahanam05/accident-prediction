@@ -1,26 +1,24 @@
-#just testing out with a model now, choose final model based on accuracy later from other file
-
 import pandas as pd
 import numpy as np
 import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import Normalizer
+from sklearn.svm import SVC
 
-df = pd.read_csv('accident.csv')
-df.dropna(inplace=True)
+df = pd.read_csv("new_accident.csv")
 
-X = df.iloc[:, :-1] 
-y = df.iloc[:, -1]   
+X = df.drop(['Survived'], axis=1)
+y = df['Survived']
 
-X_encoded = pd.get_dummies(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-feature_names = list(X_encoded.columns)
-joblib.dump(feature_names, "feature_names.pkl")
+scaler = Normalizer(norm="l1")
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
-
-model = DecisionTreeClassifier()
-model.fit(X_train, y_train)
+model = SVC()
+model.fit(X_train_scaled, y_train)
 
 joblib.dump(model, "model.pkl")
-print("Model saved successfully")
+joblib.dump(scaler, "scaler.pkl")
+print("Model and scaler saved successfully")

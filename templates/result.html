@@ -1,25 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prediction Result</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
+
 <body>
     <div class="result-box">
         <h1>Prediction</h1>
         <p id="output"></p>
         <button onclick="goBack()">Try Again</button>
     </div>
-    
+
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            let result = JSON.parse(localStorage.getItem("prediction"));
-            document.getElementById("output").innerText = result.prediction 
-                ? result.prediction 
-                : "Error: " + result.error;
+        document.addEventListener("DOMContentLoaded", function () {
+            let result = localStorage.getItem("prediction");
+            if (result) {
+                try {
+                    result = JSON.parse(result);
+                    document.getElementById("output").innerText = result.prediction
+                        ? result.prediction
+                        : "Error: " + (result.error || "Unknown error");
+                } catch (e) {
+                    document.getElementById("output").innerText = "Error: Invalid response data";
+                }
+            } else {
+                document.getElementById("output").innerText = "Error: No prediction data found";
+            }
 
             const cursor = document.createElement("div");
             cursor.classList.add("cursor");
@@ -36,4 +47,5 @@
         }
     </script>
 </body>
+
 </html>
